@@ -1093,7 +1093,7 @@ saveSection using "`tmpDtaDir'/menage.dta" , mainFile("`tmpDtaDir'/menage.dta") 
 	local pecheurVarType : type s18q02__0
 	if (substr("`pecheurVarType'", 1, 3) == "str") {
 		foreach pecheurVar of local pecheurVars {
-			replace pecheurVar = "" if (`pecheurVar' == "-999999999")
+			replace `pecheurVar' = "" if (`pecheurVar' == "-999999999")
 		}
 		egen numPecheurs = rownonmiss(`pecheurVars'), strok
 	}
@@ -1109,7 +1109,7 @@ saveSection using "`tmpDtaDir'/menage.dta" , mainFile("`tmpDtaDir'/menage.dta") 
 
 	// convertir les colonnes en format numériques, si nécessaire
 	if (substr("`pecheurVarType'", 1, 3) == "str") {
-		qui: d s01q09*, varlist
+		qui: d s18q02*, varlist
 		local newPecheurVars = r(varlist)
 		destring `newPecheurVars', replace
 	}
