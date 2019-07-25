@@ -55,6 +55,14 @@ foreach folder of local folders {
 
 }
 
+* qnrNom ne contient pas l'extension ".dta"
+local hasDta = regexm("`qnrNom'", "\.dta$")
+if `hasDta' == 1 {
+	di as error "ERREUR: le paramètre -qnrNom- ne devrait pas inclure l'extension .dta. Veuillez corriger"
+	di as error "Or vous avez renseigné `qnrNom'"
+	error 1
+}
+
 /*=============================================================================
 
 =============================================================================*/
