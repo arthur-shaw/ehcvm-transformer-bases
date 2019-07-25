@@ -23,13 +23,46 @@ local qnrNom 	""							// nom de la base principale (sans DTA à la fin)
 set more 1
 
 /*=============================================================================
+confirmer que les paramètres sont bien spécifiés
+=============================================================================*/
+
+* aucun paramètre n'est vide
+
+local parameters "projDir progs inDtaDir tmpDtaDir outDtaDir tmpLblDir outLblDir pays qnrNom"
+
+foreach parameter of local parameters {
+
+	capture assert "``parameter''" != ""
+	if _rc != 0 {
+		di as error "ERREUR: le paramètre -`parameter'- a été laissé vide. Veuillez le renseigner."
+		error 1
+	}
+
+}
+
+* tout répertoire existe
+
+local folders "projDir progs inDtaDir tmpDtaDir outDtaDir tmpLblDir outLblDir"
+
+foreach folder of local folders {
+
+	capture cd "``folder''"
+	if _rc != 0 {
+		di as error "ERREUR: le dossier -`folder'- n'existe pas à l'endroit indiqué. Veuillez corriger."
+		di as error "Chemin donné ci-haut: ``folder''"
+		error 1
+	}
+
+}
+
+/*=============================================================================
 
 =============================================================================*/
 
 /*-----------------------------------------------------------------------------
 purger les résultats crées par les séances antérieures
 -----------------------------------------------------------------------------*/
-
+/*
 local repertoires "tmpDtaDir tmpLblDir outLblDir"
 
 foreach repertoire of local repertoires {
@@ -38,7 +71,7 @@ foreach repertoire of local repertoires {
 	! mkdir "``repertoire''/"
 
 }
-
+*/
 /*-----------------------------------------------------------------------------
 harmoniser les bases et extraire les étiquettes par base
 -----------------------------------------------------------------------------*/
