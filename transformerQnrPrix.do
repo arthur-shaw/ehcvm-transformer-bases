@@ -9,7 +9,7 @@ local progs 	"`projDir'/programmes"
 * local rawDtaDir "`projDir'/data/raw/prix/"
 local inDtaDir 	"`projDir'/data/input/prix"
 local tmpDtaDir "`projDir'/data/temp/prix"
-local outDtaDir "`projDir'/data/output"
+local outDtaDir "`projDir'/data/output/prix"
 
 * labels
 * local inLblDir 	"`projDir'/labels/input/prix/"
