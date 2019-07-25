@@ -1,0 +1,5 @@
+# Stata data files
+*.dta
+
+# Stata do files
+*.do
