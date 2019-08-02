@@ -241,7 +241,7 @@ if "`missingDfiles'" != "" {
 	di "ERREUR: Des bases n'ont pas été retrouvées : `missingDfiles'"
 	* error 1
 }
-stop
+
 /*=============================================================================
 RENDRE LES ROSTERS CONFORMES AU QUESTIONNAIRE PAPIER
 =============================================================================*/
