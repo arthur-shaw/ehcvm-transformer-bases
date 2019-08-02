@@ -7,10 +7,10 @@ local projDir 	""
 local progs 	"`projDir'/programmes/"
 
 * data
-local rawDtaDir "`projDir'/data/raw/"
-local inDtaDir 	"`projDir'/data/input/"
-local tmpDtaDir "`projDir'/data/temp/"
-local outDtaDir "`projDir'/data/output/"
+local rawDtaDir "`projDir'/data/raw/"		// données brutes
+local inDtaDir 	"`projDir'/data/input/" 	// données légèrement modifiées
+local tmpDtaDir "`projDir'/data/temp/" 		// fichiers temporaires
+local outDtaDir "`projDir'/data/output/" 	// données finales
 
 * labels
 local inLblDir 	"`projDir'/labels/input/"
@@ -177,7 +177,13 @@ while r(eof) == 0 {
 
 			local currVar = VarName[`i']
 			local currLabel = NewLabel[`i']
-			file write `lfile' `"label variable `currVar' `"`currLabel'"'   "' _n
+			if `i' == 1 {
+				file write `lfile' "#delim ;" _n
+			}
+			file write `lfile' `"capture label variable `currVar' `"`currLabel'"';   "' _n
+			if `i' == `r(N)' {
+				file write `lfile' "#delim cr" _n
+			}
 
 		}
 
@@ -235,8 +241,7 @@ if "`missingDfiles'" != "" {
 	di "ERREUR: Des bases n'ont pas été retrouvées : `missingDfiles'"
 	* error 1
 }
-
-
+stop
 /*=============================================================================
 RENDRE LES ROSTERS CONFORMES AU QUESTIONNAIRE PAPIER
 =============================================================================*/
@@ -268,7 +273,7 @@ foreach yn of local ynVars {
 tempfile menage
 save "`menage'"
 save "`inDtaDir'/menage2.dta", replace
-save "`tmpDtaDir'/menage.dta", replace
+save "`inDtaDir'/menage.dta", replace
 
 use "`inDtaDir'/consommationAlimentaire.dta", clear
 rename produitID consommationAlimentaire__id
@@ -282,11 +287,11 @@ mergeTrigger, 										///
 	mainFile("menage2") 							///
 	rosterFile("consommationAlimentaire")			///
 	newRosterID("s07Bq01")							///
-	saveDir("`tmpDtaDir'")
+	saveDir("`inDtaDir'")
 
 /* TODO: Combine value labels from all dsets */
 label values s07Bq01 produitID
-save "`tmpDtaDir'/consommationAlimentaire.dta", replace
+save "`inDtaDir'/consommationAlimentaire.dta", replace
 
 * 9A: dépenses des fêtes et cérémonies au cours des 12 derniers mois
 mergeTrigger, 										///
@@ -296,7 +301,7 @@ mergeTrigger, 										///
 	mainFile("menage") 								///
 	rosterFile("depense_fete")						///
 	newRosterID("s09Aq01")							///
-	saveDir("`tmpDtaDir'")
+	saveDir("`inDtaDir'")
 
 * 9B. dépenses non-alimentaires des 7 derniers jours
 mergeTrigger, 										///
@@ -306,7 +311,7 @@ mergeTrigger, 										///
 	mainFile("menage") 								///
 	rosterFile("depense_7j")						///
 	newRosterID("s09Bq01")							///	
-	saveDir("`tmpDtaDir'")
+	saveDir("`inDtaDir'")
 
 * 9C: dépenses non-alimentaires des 30 derniers jours
 mergeTrigger, 										///
@@ -316,7 +321,7 @@ mergeTrigger, 										///
 	mainFile("menage") 								///
 	rosterFile("depense_30j") 						///
 	newRosterID("s09Cq01")							///	
-	saveDir("`tmpDtaDir'")
+	saveDir("`inDtaDir'")
 
 * 9D: dépenses non-alimentaires des 3 derniers mois
 mergeTrigger, 										///
@@ -326,7 +331,7 @@ mergeTrigger, 										///
 	mainFile("menage") 								///
 	rosterFile("depense_3m") 						///
 	newRosterID("s09Dq01")							///	
-	saveDir("`tmpDtaDir'")
+	saveDir("`inDtaDir'")
 
 * 9E: dépenses non-alimentaires des 6 derniers mois
 mergeTrigger, 										///
@@ -336,7 +341,7 @@ mergeTrigger, 										///
 	mainFile("menage") 								///
 	rosterFile("depense_6m") 						///
 	newRosterID("s09Eq01")							///	
-	saveDir("`tmpDtaDir'")
+	saveDir("`inDtaDir'")
 
 * 9F: dépenses non-alimentaires des 12 derniers mois
 mergeTrigger, 										///
@@ -346,7 +351,7 @@ mergeTrigger, 										///
 	mainFile("menage") 								///
 	rosterFile("depense_12m") 						///
 	newRosterID("s09Fq01")							///	
-	saveDir("`tmpDtaDir'")
+	saveDir("`inDtaDir'")
 
 * 10: entreprises
 
@@ -380,7 +385,7 @@ mergeTrigger, 										///
 
 	tempfile entreprises
 	save "`entreprises'"
-	save "`tmpDtaDir'/entreprises.dta"
+	save "`inDtaDir'/entreprises.dta", replace
 
 * 12 : actifs du ménage
 mergeTrigger, 										///
@@ -390,7 +395,7 @@ mergeTrigger, 										///
 	mainFile("menage") 								///
 	rosterFile("actifs") 							///
 	newRosterID("s12q01")							///	
-	saveDir("`tmpDtaDir'")
+	saveDir("`inDtaDir'")
 
 * 14 : chocs et stratégies de survie
 
@@ -401,7 +406,7 @@ mergeTrigger, 										///
 		dataDir("`inDtaDir'")						///
 		mainFile("menage") 							///
 		rosterFile("chocs")							///
-		saveDir("`tmpDtaDir'")
+		saveDir("`inDtaDir'")
 
 	tempfile chocsImportants
 	save "`chocsImportants'"
@@ -427,7 +432,7 @@ mergeTrigger, 										///
 	label define s14q03 1 "Le plus sévère" 2 "Deuxième" 3 "Le moins sévère des trois"
 	label values s14q03 s14q03
 
-	save "`tmpDtaDir'/chocs.dta", replace
+	save "`inDtaDir'/chocs.dta", replace
 
 * 15 : filets de sécurité
 mergeTrigger, 										///
@@ -437,7 +442,7 @@ mergeTrigger, 										///
 	mainFile("menage") 								///
 	rosterFile("filets_securite") 					///
 	newRosterID("s15q01")							///	
-	saveDir("`tmpDtaDir'")
+	saveDir("`inDtaDir'")
 
 
 * 16A : champs-parcelles
@@ -450,7 +455,7 @@ mergeTrigger, 										///
 
 	tempfile champs_parcelles
 	save "`champs_parcelles'"
-	save "`tmpDtaDir'/champs_parcelles.dta", replace
+	save "`inDtaDir'/champs_parcelles.dta", replace
 
 	* ramener au niveau parcelle le travail familial ...
 
@@ -533,7 +538,7 @@ mergeTrigger, 										///
 	rename champs__id 		s16aq02
 	rename parcelles__id	s16aq03
 
-	save "`tmpDtaDir'/champs_parcelles.dta", replace
+	save "`inDtaDir'/champs_parcelles.dta", replace
 
 * 16B : coût des intrants
 mergeTrigger, 										///
@@ -543,7 +548,7 @@ mergeTrigger, 										///
 	mainFile("menage") 								///
 	rosterFile("cout_intrants") 					///
 	newRosterID("s16Bq01")							///	
-	saveDir("`tmpDtaDir'")
+	saveDir("`inDtaDir'")
 
 * 16C : champs-parcelles-cultures
 
@@ -569,7 +574,7 @@ merge 1:m interview__id champs__id parcelles__id using "`inDtaDir'/cultures.dta"
 
 tempfile champs_parcelles_cultures
 save "`champs_parcelles_cultures'"
-save "`tmpDtaDir'/champs_parcelles_cultures.dta", replace
+save "`inDtaDir'/champs_parcelles_cultures.dta", replace
 
 * 17 : élevage
 mergeTrigger, 										///
@@ -579,7 +584,7 @@ mergeTrigger, 										///
 	mainFile("menage") 								///
 	rosterFile("elevage") 							///
 	newRosterID("s17q02")							///	
-	saveDir("`tmpDtaDir'")
+	saveDir("`inDtaDir'")
 
 /* TODO: Create animal names by creating a string var that is label for val of s17q02 */
 
@@ -590,7 +595,7 @@ CRÉER DES FICHIERS PAR SECTION-NIVEAU
 local SuSoIDs "interview__key interview__id"
 local caseIDs 	"grappe Id_menage vague"
 
-use "`tmpDtaDir'/menage.dta", clear
+use "`inDtaDir'/menage.dta", clear
 
 /*-----------------------------------------------------------------------------
 rosters des membres
@@ -679,7 +684,7 @@ end
 section 0
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/menage.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/menage.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///	
 	othVars(GPS* nom_prenom_cm localisation_menage visite* format_interview 	///
 		observation) 															///
@@ -689,7 +694,7 @@ saveSection using "`tmpDtaDir'/menage.dta" , mainFile("`tmpDtaDir'/menage.dta") 
 section 1
 -----------------------------------------------------------------------------*/
 
-saveSection using "`inDtaDir'/membres.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/membres.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	listIdFrom(membres__id) listIdTo(s01q00a) 									///
 	listNameFrom(NOM_PRENOMS) listNameTo(s01q00b) 								///
@@ -734,7 +739,7 @@ save "`outDtaDir'/s01_me_`pays'2018.dta", replace
 section 2
 -----------------------------------------------------------------------------*/
 
-saveSection using "`inDtaDir'/membres.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/membres.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') othVars(s01q00a s01q00b)				///
 	listIdFrom(membres__id) listIdTo(s01q00a) 									///
 	listNameFrom(NOM_PRENOMS) listNameTo(s01q00b) 								///	
@@ -745,7 +750,7 @@ saveSection using "`inDtaDir'/membres.dta" , mainFile("`tmpDtaDir'/menage.dta") 
 section 3
 -----------------------------------------------------------------------------*/
 
-saveSection using "`inDtaDir'/membres.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/membres.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') othVars(s01q00a s01q00b)				///
 	listIdFrom(membres__id) listIdTo(s01q00a) 									///
 	listNameFrom(NOM_PRENOMS) listNameTo(s01q00b) 								///
@@ -756,7 +761,7 @@ saveSection using "`inDtaDir'/membres.dta" , mainFile("`tmpDtaDir'/menage.dta") 
 section 4
 -----------------------------------------------------------------------------*/
 
-saveSection using "`inDtaDir'/membres.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/membres.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') othVars(s01q00a s01q00b)				///
 	listIdFrom(membres__id) listIdTo(s01q00a) 									///
 	listNameFrom(NOM_PRENOMS) listNameTo(s01q00b) 								///
@@ -767,7 +772,7 @@ saveSection using "`inDtaDir'/membres.dta" , mainFile("`tmpDtaDir'/menage.dta") 
 section 5
 -----------------------------------------------------------------------------*/
 
-saveSection using "`inDtaDir'/membres.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/membres.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') othVars(s01q00a s01q00b)				///
 	listIdFrom(membres__id) listIdTo(s01q00a) 									///
 	listNameFrom(NOM_PRENOMS) listNameTo(s01q00b) 								///
@@ -778,7 +783,7 @@ saveSection using "`inDtaDir'/membres.dta" , mainFile("`tmpDtaDir'/menage.dta") 
 section 6
 -----------------------------------------------------------------------------*/
 
-saveSection using "`inDtaDir'/membres.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/membres.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') othVars(s01q00a s01q00b)				///
 	listIdFrom(membres__id) listIdTo(s01q00a) 									///
 	listNameFrom(NOM_PRENOMS) listNameTo(s01q00b) 								///
@@ -793,7 +798,7 @@ save "`outDtaDir'/s06_me_`pays'2018.dta", replace
 section 7A1
 -----------------------------------------------------------------------------*/
 
-saveSection using "`inDtaDir'/membres.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/membres.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	currVarStub(07A) newVarStub(07a) saveStub(07a1) roster(no) 					///
 	pays(`pays') saveDir(`outDtaDir')
@@ -802,7 +807,7 @@ saveSection using "`inDtaDir'/membres.dta" , mainFile("`tmpDtaDir'/menage.dta") 
 section 7A2
 -----------------------------------------------------------------------------*/
 
-saveSection using "`inDtaDir'/membres.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/membres.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') othVars(s01q00a s01q00b)				///
 	listIdFrom(membres__id) listIdTo(s01q00a) 									///
 	listNameFrom(NOM_PRENOMS) listNameTo(s01q00b) 								///	
@@ -814,8 +819,8 @@ saveSection using "`inDtaDir'/membres.dta" , mainFile("`tmpDtaDir'/menage.dta") 
 section 7B
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/consommationAlimentaire.dta" , 					///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+saveSection using "`inDtaDir'/consommationAlimentaire.dta" , 					///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	sortBy(interview__id s07bq01) 												///
 	currVarStub(07B) newVarStub(07b) saveStub(07b) roster(yes) 					///
@@ -825,7 +830,7 @@ saveSection using "`tmpDtaDir'/consommationAlimentaire.dta" , 					///
 section 8A
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/menage.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/menage.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	currVarStub(08A) newVarStub(08a) saveStub(08a) roster(no) 					///
 	pays(`pays') saveDir(`outDtaDir')
@@ -834,7 +839,7 @@ saveSection using "`tmpDtaDir'/menage.dta" , mainFile("`tmpDtaDir'/menage.dta") 
 section 8B1
 -----------------------------------------------------------------------------*/
 
-saveSection using "`inDtaDir'/menage.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/menage.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	currVarStub(08B) newVarStub(08b) saveStub(08b1) roster(no) 					///
 	pays(`pays') saveDir(`outDtaDir')
@@ -846,7 +851,7 @@ section 8B2
 * TODO: check whether there is a trigger to merge; check var names since don't match paper
 
 saveSection using "`inDtaDir'/repas_non_membre.dta" , 							///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	rosterIDTo(s08bq03) 														///
 	sortBy(interview__id s08bq03) 												///
@@ -857,8 +862,8 @@ saveSection using "`inDtaDir'/repas_non_membre.dta" , 							///
 section 9A
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/depense_fete.dta" , 								///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+saveSection using "`inDtaDir'/depense_fete.dta" , 								///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	sortBy(interview__id s09aq01) 												///
 	currVarStub(09A) newVarStub(09a) saveStub(09a) roster(yes) 					///
@@ -868,8 +873,8 @@ saveSection using "`tmpDtaDir'/depense_fete.dta" , 								///
 section 9B
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/depense_7j.dta" , 								///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+saveSection using "`inDtaDir'/depense_7j.dta" , 								///
+	mainFile("`inDtaDir'/menage.dta") 											///
  	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	sortBy(interview__id s09bq01) 												///
 	currVarStub(09B) newVarStub(09b) saveStub(09b) roster(yes) 					///
@@ -879,8 +884,8 @@ saveSection using "`tmpDtaDir'/depense_7j.dta" , 								///
 section 9C
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/depense_30j.dta" , 								///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+saveSection using "`inDtaDir'/depense_30j.dta" , 								///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	sortBy(interview__id s09cq01) 												///
 	currVarStub(09C) newVarStub(09c) saveStub(09c) roster(yes) 					///
@@ -890,8 +895,8 @@ saveSection using "`tmpDtaDir'/depense_30j.dta" , 								///
 section 9D
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/depense_3m.dta" , 								///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+saveSection using "`inDtaDir'/depense_3m.dta" , 								///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	sortBy(interview__id s09dq01) 												///
 	currVarStub(09D) newVarStub(09d) saveStub(09d) roster(yes) 					///
@@ -901,8 +906,8 @@ saveSection using "`tmpDtaDir'/depense_3m.dta" , 								///
 section 9E
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/depense_6m.dta" , 								///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+saveSection using "`inDtaDir'/depense_6m.dta" , 								///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	sortBy(interview__id s09eq01) 												///
 	currVarStub(09E) newVarStub(09e) saveStub(09e) roster(yes) 					///
@@ -912,8 +917,8 @@ saveSection using "`tmpDtaDir'/depense_6m.dta" , 								///
 section 9F
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/depense_12m.dta" , 								///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+saveSection using "`inDtaDir'/depense_12m.dta" , 								///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	sortBy(interview__id s09fq01) 												///
 	currVarStub(09F) newVarStub(09f) saveStub(09f) roster(yes) 					///
@@ -923,7 +928,7 @@ saveSection using "`tmpDtaDir'/depense_12m.dta" , 								///
 section 10A
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/menage.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/menage.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	currVarStub(10) saveStub(10_1) roster(no) 									///
 	pays(`pays') saveDir(`outDtaDir')
@@ -932,8 +937,8 @@ saveSection using "`tmpDtaDir'/menage.dta" , mainFile("`tmpDtaDir'/menage.dta") 
 section 10B
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/entreprises.dta" , 								///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+saveSection using "`inDtaDir'/entreprises.dta" , 								///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	currVarStub(10) saveStub(10_2) roster(yes) 									///
 	pays(`pays') saveDir(`outDtaDir')
@@ -942,7 +947,7 @@ saveSection using "`tmpDtaDir'/entreprises.dta" , 								///
 section 11
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/menage.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/menage.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	currVarStub(11) saveStub(11) roster(no) 									///
 	pays(`pays') saveDir(`outDtaDir')
@@ -951,8 +956,8 @@ saveSection using "`tmpDtaDir'/menage.dta" , mainFile("`tmpDtaDir'/menage.dta") 
 section 12
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/actifs.dta" , 									///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+saveSection using "`inDtaDir'/actifs.dta" , 									///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	sortBy(interview__id s12q01) 												///
 	currVarStub(12) saveStub(12) roster(yes) 									///
@@ -962,8 +967,8 @@ saveSection using "`tmpDtaDir'/actifs.dta" , 									///
 section 13A_1
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/menage.dta" , 										///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+saveSection using "`inDtaDir'/menage.dta" , 									///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	currVarStub(13A) newVarStub(13a) saveStub(13a_1) roster(no) 				///
 	pays(`pays') saveDir(`outDtaDir')
@@ -973,7 +978,7 @@ section 13A_2
 -----------------------------------------------------------------------------*/
 
 saveSection using "`inDtaDir'/transferts_recus.dta" , 							///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	othVars(s13q04b) 															///
 	rosterIDTo(s13aq04a) 														///
@@ -988,8 +993,8 @@ save "`outDtaDir'/s13a_2_me_`pays'2018.dta", replace
 section 13B_1
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/menage.dta" , 									///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+saveSection using "`inDtaDir'/menage.dta" , 									///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	currVarStub(13B) newVarStub(13b) saveStub(13b_1) roster(no) 				///
 	pays(`pays') saveDir(`outDtaDir')
@@ -999,7 +1004,7 @@ section 13B_2
 -----------------------------------------------------------------------------*/
 
 saveSection using "`inDtaDir'/transferts_emis.dta" , 							///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	othVars(s13q21b) 															///
 	rosterIDTo(s13bq21a) 														///
@@ -1014,7 +1019,7 @@ save "`outDtaDir'/s13b_2_me_`pays'2018.dta", replace
 section 14
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/chocs.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/chocs.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	rosterIDTo(s14q01) 															///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	sortBy(interview__id s14q01) 												///
@@ -1024,8 +1029,8 @@ saveSection using "`tmpDtaDir'/chocs.dta" , mainFile("`tmpDtaDir'/menage.dta") 	
 section 15
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/filets_securite.dta" , 							///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+saveSection using "`inDtaDir'/filets_securite.dta" , 							///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	sortBy(interview__id s15q01) 												///	
 	currVarStub(15) saveStub(15) roster(yes) pays(`pays') saveDir(`outDtaDir')
@@ -1034,8 +1039,8 @@ saveSection using "`tmpDtaDir'/filets_securite.dta" , 							///
 section 16A
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/champs_parcelles.dta" , 							///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+saveSection using "`inDtaDir'/champs_parcelles.dta" , 							///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	sortBy(interview__id s16aq02 s16aq03) 										///
 	currVarStub(16A) newVarStub(16a) saveStub(16a) roster(yes) 					///
@@ -1045,8 +1050,8 @@ saveSection using "`tmpDtaDir'/champs_parcelles.dta" , 							///
 section 16B
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/cout_intrants.dta" , 							///
-	mainFile("`tmpDtaDir'/menage.dta") 											///	
+saveSection using "`inDtaDir'/cout_intrants.dta" , 								///
+	mainFile("`inDtaDir'/menage.dta") 											///	
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	sortBy(interview__id s16bq01) 												///
 	currVarStub(16B) newVarStub(16b) saveStub(16b) roster(yes) 					///
@@ -1056,8 +1061,8 @@ saveSection using "`tmpDtaDir'/cout_intrants.dta" , 							///
 section 16C
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/champs_parcelles_cultures.dta" , 				///
-	mainFile("`tmpDtaDir'/menage.dta") 											///	
+saveSection using "`inDtaDir'/champs_parcelles_cultures.dta" , 					///
+	mainFile("`inDtaDir'/menage.dta") 											///	
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	sortBy(interview__id s16cq02 s16cq03 s16cq04) 								///
 	currVarStub(16C) newVarStub(16c) saveStub(16c) roster(yes) 					///
@@ -1067,8 +1072,8 @@ saveSection using "`tmpDtaDir'/champs_parcelles_cultures.dta" , 				///
 section 17
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/elevage.dta" , 									///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+saveSection using "`inDtaDir'/elevage.dta" , 									///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	sortBy(interview__id s17q02) 												///
 	currVarStub(17) saveStub(17) roster(yes) pays(`pays') saveDir(`outDtaDir')
@@ -1078,7 +1083,7 @@ section 18
 -----------------------------------------------------------------------------*/
 
 * partie 1: niveau ménage
-saveSection using "`tmpDtaDir'/menage.dta" , mainFile("`tmpDtaDir'/menage.dta") ///
+saveSection using "`inDtaDir'/menage.dta" , mainFile("`inDtaDir'/menage.dta") ///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	varsToExclude(s18q12* s18q18*) 												///
 	currVarStub(18) saveStub(18_1) roster(no) pays(`pays') saveDir(`outDtaDir')
@@ -1119,7 +1124,7 @@ saveSection using "`tmpDtaDir'/menage.dta" , mainFile("`tmpDtaDir'/menage.dta") 
 
 * partie 2: cout des licenses
 saveSection using "`inDtaDir'/cout_permis.dta" , 								///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	currVarStub(18) saveStub(18_2) roster(yes) pays(`pays') saveDir(`outDtaDir')
 
@@ -1127,13 +1132,13 @@ saveSection using "`inDtaDir'/cout_permis.dta" , 								///
 
 * partie 3: haute saison
 saveSection using "`inDtaDir'/poisson_haute_saison.dta" , 						///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	currVarStub(18) saveStub(18_3) roster(yes) pays(`pays') saveDir(`outDtaDir')
 
 * partie 4: basse saison
 saveSection using "`inDtaDir'/poisson_basse_saison.dta" , 						///
-	mainFile("`tmpDtaDir'/menage.dta") 											///
+	mainFile("`inDtaDir'/menage.dta") 											///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	currVarStub(18) saveStub(18_4) roster(yes) pays(`pays') saveDir(`outDtaDir')
 
@@ -1142,7 +1147,7 @@ section 19
 -----------------------------------------------------------------------------*/
 
 saveSection using "`inDtaDir'/equipements.dta" , 								///
-	mainFile("`tmpDtaDir'/menage.dta") 											///	
+	mainFile("`inDtaDir'/menage.dta") 											///	
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	rosterIDFrom(equipment__id) rosterIDTo(s19q02) 								/// /* TODO: determine the "from" name programmatically since should be original raw file name + __id */
 	sortBy(interview__id s19q02) 												///
@@ -1153,7 +1158,7 @@ saveSection using "`inDtaDir'/equipements.dta" , 								///
 section 20
 -----------------------------------------------------------------------------*/
 
-saveSection using "`tmpDtaDir'/menage.dta" , mainFile("`tmpDtaDir'/menage.dta") 	///
+saveSection using "`inDtaDir'/menage.dta" , mainFile("`inDtaDir'/menage.dta") 	///
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
 	currVarStub(20) saveStub(20) roster(no) pays(`pays') saveDir(`outDtaDir')
 
