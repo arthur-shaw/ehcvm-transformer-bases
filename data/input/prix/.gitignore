@@ -1,2 +1,6 @@
-# Stata data files
+# files from SuSo export: Stata data and text
 *.dta
+*.txt
+
+# zip archives
+*.zip
