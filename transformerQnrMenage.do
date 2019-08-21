@@ -18,7 +18,7 @@ local tmpLblDir "`projDir'/labels/temp/"
 local outLblDir "`projDir'/labels/output/"
 
 * paramètres pays
-local pays 		"" 						// nom raccourci du pays
+local pays 		"" 							// nom raccourci du pays
 
 set more 1
 
@@ -704,6 +704,7 @@ saveSection using "`inDtaDir'/membres.dta" , mainFile("`inDtaDir'/menage.dta") 	
 * ne retenir que les colonnes utilisées pour capter toutes les épouses (de l'échantillon)
 
 // obtenir la liste de colonnes suivant ce schéma
+capture drop s01q09_accord* // laisser tomber des variables superflues avec un nom semblable
 qui: d s01q09*, varlist
 local spouseVars = r(varlist)
 
@@ -1103,7 +1104,7 @@ saveSection using "`inDtaDir'/menage.dta" , mainFile("`inDtaDir'/menage.dta") //
 		egen numPecheurs = rownonmiss(`pecheurVars'), strok
 	}
 	else if inlist("`pecheurVarType'", "byte", "int", "long", "float", "double") {
-		egen numSpouse = rownonmiss(`pecheurVars')
+		egen numPecheurs = rownonmiss(`pecheurVars')
 	}
 
 	// supprimer les colonnes non-utilisées
@@ -1146,10 +1147,19 @@ saveSection using "`inDtaDir'/poisson_basse_saison.dta" , 						///
 section 19
 -----------------------------------------------------------------------------*/
 
+* aligner le nom de l'identifiant avec les attentes du programmes, s'il y a lieu de faire
+use "`inDtaDir'/equipements.dta", clear
+capture confirm equipments__id
+if _rc != 0 {
+	capture rename equipment__id equipements__id
+	capture rename equipments__id equipements__id
+	save "`inDtaDir'/equipements.dta", replace
+}
+
 saveSection using "`inDtaDir'/equipements.dta" , 								///
 	mainFile("`inDtaDir'/menage.dta") 											///	
 	susoIDs(`SuSoIDs') caseIDs(`caseIDs') 										///
-	rosterIDFrom(equipment__id) rosterIDTo(s19q02) 								/// /* TODO: determine the "from" name programmatically since should be original raw file name + __id */
+	rosterIDFrom(equipements__id) rosterIDTo(s19q02) 							/// /* TODO: determine the "from" name programmatically since should be original raw file name + __id */
 	sortBy(interview__id s19q02) 												///
 	currVarStub(19) saveStub(19) roster(yes) 									///
 	pays(`pays') saveDir(`outDtaDir')
